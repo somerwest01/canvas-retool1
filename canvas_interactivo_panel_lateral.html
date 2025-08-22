@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Canvas interactivo</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+<div style="display: flex; height: 100vh; font-family: sans-serif;">
+  <div style="width: 200px; background: #f0f0f0; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1);">
+    <h3>Opciones</h3>
+    <label for="tipoObjeto">Tipo de objeto:</label><br>
+    <select id="tipoObjeto">
+      <option value="Conector">Conector</option>
+      <option value="Splice">Splice</option>
+      <option value="BRK">BRK</option>
+    </select><br><br>
+    <button onclick="activarDibujo()">Crear línea</button>
+  </div>
+  <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center;">
+    <canvas id="drawingCanvas" width="800" height="500" style="border:1px solid black;"></canvas>
+  </div>
+</div>
+
+
+<script>
+  const canvas = document.getElementById('drawingCanvas');
+  const ctx = canvas.getContext('2d');
+  let points = [];
+  let currentStart = null;
+  let pendingEnd = null;
+  let modoDibujo = false;
+
+  function drawMarker(x, y, type) {
+    ctx.beginPath();
+    switch(type) {
+      case 'Conector':
+        ctx.rect(x - 5, y - 5, 10, 10);
+        break;
+      case 'Splice':
+        ctx.moveTo(x, y - 6);
+        ctx.lineTo(x - 6, y + 6);
+        ctx.lineTo(x + 6, y + 6);
+        ctx.closePath();
+        break;
+      case 'BRK':
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        return;
+    }
+    ctx.stroke();
+  }
+
+  function findClosestPoint(x, y) {
+    let minDist = Infinity;
+    let closest = null;
+    for (const p of points) {
+      const dist = Math.hypot(p.x - x, p.y - y);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = p;
+      }
+    }
+    return closest;
+  }
+
+  function activarDibujo() {
+    modoDibujo = true;
+  }
+
+  canvas.addEventListener('click', (e) => {
+    if (!modoDibujo) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (!currentStart) {
+      const nearest = findClosestPoint(x, y);
+      if (nearest && Math.hypot(nearest.x - x, nearest.y - y) < 20) {
+        currentStart = nearest;
+      } else {
+        currentStart = { x, y };
+        points.push(currentStart);
+      }
+    } else {
+      const endPoint = { x, y };
+      points.push(endPoint);
+      ctx.beginPath();
+      ctx.moveTo(currentStart.x, currentStart.y);
+      ctx.lineTo(endPoint.x, endPoint.y);
+      ctx.stroke();
+
+      const tipo = document.getElementById('tipoObjeto').value;
+      drawMarker(endPoint.x, endPoint.y, tipo);
+
+      currentStart = null;
+      modoDibujo = false;
+    }
+
+    if (window.Retool) {
+      window.Retool.modelUpdate({ points });
+    }
+  });
+</script>
+</body>
+</html>
