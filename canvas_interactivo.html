@@ -11,21 +11,22 @@
   </style>
 </head>
 <body>
-  <h2>Haz clic para dibujar líneas</h2>
-  
-<div id="menu" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:10;">
-  <label>Tipo de objeto:</label><br>
-  <select id="tipoObjeto">
-    <option value="Conector">Conector</option>
-    <option value="Splice">Splice</option>
-    <option value="BRK">BRK</option>
-  </select><br><br>
-  <button onclick="confirmarTipo()">Confirmar</button>
+<div style="display: flex; height: 100vh; font-family: sans-serif;">
+  <div style="width: 200px; background: #f0f0f0; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1);">
+    <h3>Opciones</h3>
+    <label for="tipoObjeto">Tipo de objeto:</label><br>
+    <select id="tipoObjeto">
+      <option value="Conector">Conector</option>
+      <option value="Splice">Splice</option>
+      <option value="BRK">BRK</option>
+    </select><br><br>
+    <button onclick="activarDibujo()">Crear línea</button>
+  </div>
+  <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center;">
+    <canvas id="drawingCanvas" width="800" height="500" style="border:1px solid black;"></canvas>
+  </div>
 </div>
 
-<canvas id="drawingCanvas" width="600" height="400"></canvas>
-
-  
 
 <script>
   const canvas = document.getElementById('drawingCanvas');
@@ -33,6 +34,7 @@
   let points = [];
   let currentStart = null;
   let pendingEnd = null;
+  let modoDibujo = false;
 
   function drawMarker(x, y, type) {
     ctx.beginPath();
@@ -67,14 +69,13 @@
     return closest;
   }
 
-  function confirmarTipo() {
-    const tipo = document.getElementById('tipoObjeto').value;
-    drawMarker(pendingEnd.x, pendingEnd.y, tipo);
-    document.getElementById('menu').style.display = 'none';
-    pendingEnd = null;
+  function activarDibujo() {
+    modoDibujo = true;
   }
 
   canvas.addEventListener('click', (e) => {
+    if (!modoDibujo) return;
+
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -95,13 +96,11 @@
       ctx.lineTo(endPoint.x, endPoint.y);
       ctx.stroke();
 
-      pendingEnd = endPoint;
-      const menu = document.getElementById('menu');
-      menu.style.left = `${x + 10}px`;
-      menu.style.top = `${y + 10}px`;
-      menu.style.display = 'block';
+      const tipo = document.getElementById('tipoObjeto').value;
+      drawMarker(endPoint.x, endPoint.y, tipo);
 
       currentStart = null;
+      modoDibujo = false;
     }
 
     if (window.Retool) {
@@ -109,7 +108,5 @@
     }
   });
 </script>
-
-
 </body>
 </html>
