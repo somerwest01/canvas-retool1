@@ -12,14 +12,27 @@
 </head>
 <body>
   <h2>Haz clic para dibujar líneas</h2>
-  <canvas id="drawingCanvas" width="600" height="400"></canvas>
+  
+<div id="menu" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:10;">
+  <label>Tipo de objeto:</label><br>
+  <select id="tipoObjeto">
+    <option value="Conector">Conector</option>
+    <option value="Splice">Splice</option>
+    <option value="BRK">BRK</option>
+  </select><br><br>
+  <button onclick="confirmarTipo()">Confirmar</button>
+</div>
+
+<canvas id="drawingCanvas" width="600" height="400"></canvas>
 
   
+
 <script>
   const canvas = document.getElementById('drawingCanvas');
   const ctx = canvas.getContext('2d');
   let points = [];
   let currentStart = null;
+  let pendingEnd = null;
 
   function drawMarker(x, y, type) {
     ctx.beginPath();
@@ -54,6 +67,13 @@
     return closest;
   }
 
+  function confirmarTipo() {
+    const tipo = document.getElementById('tipoObjeto').value;
+    drawMarker(pendingEnd.x, pendingEnd.y, tipo);
+    document.getElementById('menu').style.display = 'none';
+    pendingEnd = null;
+  }
+
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -75,8 +95,11 @@
       ctx.lineTo(endPoint.x, endPoint.y);
       ctx.stroke();
 
-      const type = prompt("Selecciona el tipo de objeto (Conector, Splice, BRK):", "Conector");
-      drawMarker(endPoint.x, endPoint.y, type);
+      pendingEnd = endPoint;
+      const menu = document.getElementById('menu');
+      menu.style.left = `${x + 10}px`;
+      menu.style.top = `${y + 10}px`;
+      menu.style.display = 'block';
 
       currentStart = null;
     }
@@ -86,6 +109,7 @@
     }
   });
 </script>
+
 
 </body>
 </html>
