@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Canvas interactivo</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <h2>Haz clic para dibujar líneas</h2>
+  <canvas id="drawingCanvas" width="600" height="400"></canvas>
+
+  
+<script>
+  const canvas = document.getElementById('drawingCanvas');
+  const ctx = canvas.getContext('2d');
+  let points = [];
+  let currentStart = null;
+
+  function drawMarker(x, y, type) {
+    ctx.beginPath();
+    switch(type) {
+      case 'Conector':
+        ctx.rect(x - 5, y - 5, 10, 10);
+        break;
+      case 'Splice':
+        ctx.moveTo(x, y - 6);
+        ctx.lineTo(x - 6, y + 6);
+        ctx.lineTo(x + 6, y + 6);
+        ctx.closePath();
+        break;
+      case 'BRK':
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        return;
+    }
+    ctx.stroke();
+  }
+
+  function findClosestPoint(x, y) {
+    let minDist = Infinity;
+    let closest = null;
+    for (const p of points) {
+      const dist = Math.hypot(p.x - x, p.y - y);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = p;
+      }
+    }
+    return closest;
+  }
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (!currentStart) {
+      const nearest = findClosestPoint(x, y);
+      if (nearest && Math.hypot(nearest.x - x, nearest.y - y) < 20) {
+        currentStart = nearest;
+      } else {
+        currentStart = { x, y };
+        points.push(currentStart);
+      }
+    } else {
+      const endPoint = { x, y };
+      points.push(endPoint);
+      ctx.beginPath();
+      ctx.moveTo(currentStart.x, currentStart.y);
+      ctx.lineTo(endPoint.x, endPoint.y);
+      ctx.stroke();
+
+      const type = prompt("Selecciona el tipo de objeto (Conector, Splice, BRK):", "Conector");
+      drawMarker(endPoint.x, endPoint.y, type);
+
+      currentStart = null;
+    }
+
+    if (window.Retool) {
+      window.Retool.modelUpdate({ points });
+    }
+  });
+</script>
+
+</body>
+</html>
